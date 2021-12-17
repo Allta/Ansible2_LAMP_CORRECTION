@@ -1,0 +1,7 @@
+# ansible galaxy dependencies
+#
+# command to install dependencies :
+# 'ansible-galaxy install -r requirements.yml'
+
+community.docker
+community.mysql 

@@ -1,0 +1,6 @@
+---
+mysql_user: "admin"
+mysql_password: "secret"
+mysql_dbname: "lab161"
+db_host: 10.114.0.7
+webserver_host: 10.114.0.5

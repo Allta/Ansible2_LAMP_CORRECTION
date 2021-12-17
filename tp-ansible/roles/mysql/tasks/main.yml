@@ -1,0 +1,73 @@
+---
+
+- name: Pull an image mysql
+  community.docker.docker_image:
+    name: mysql
+    source: pull
+
+- name: Create Mysql persistence directory
+  ansible.builtin.file:
+    state: directory
+    path: /var/mysql_persistency
+    mode: 0755
+
+- name: Create container mysql
+  community.docker.docker_container:
+    name: main_db
+    image: mysql
+    state: started
+    restart_policy: on-failure
+    ports:
+      - "3306:3306"
+    env:
+      MYSQL_ROOT_PASSWORD: "{{ mysql_root_password }}"
+      MYSQL_USER: "{{ mysql_user }}"
+      MYSQL_PASSWORD: "{{ mysql_password }}"
+      MYSQL_ROOT_HOST: "%"
+    volumes:
+      - /var/mysql_persistency:/var/lib/mysql
+
+- name: Install PyMySQL python library
+  pip:
+    name: PyMySQL
+
+- name: Install mysql bin client and mysqldump 
+  apt:
+    name:
+      - mysql-client
+    update_cache: yes
+
+- name: Grant user right
+  community.mysql.mysql_user:
+    name: "{{ mysql_user }}"
+    priv: "*.*:ALL"
+    login_user:  root
+    login_password: "{{ mysql_root_password }}"
+    login_port: 3306
+    login_host: 10.114.0.7
+
+- name: Query alter user
+  community.mysql.mysql_query:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_port: 3306
+    login_host: 127.0.0.1
+    query: 
+      - ALTER USER '{{ mysql_user }}'@'%' IDENTIFIED WITH mysql_native_password BY '{{ mysql_password }}';
+      - GRANT ALL ON *.* TO 'admin'@'%'
+      - FLUSH PRIVILEGES;
+
+- name: Copy database sql file
+  ansible.builtin.template:
+    src: templates/table.sql.j2
+    dest: /tmp/table.sql
+
+- name: Create database with set table
+  community.mysql.mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_password }}"
+    login_port: 3306
+    login_host: 127.0.0.1
+    name: "{{ mysql_database }}"
+    state: import
+    target: /tmp/table.sql

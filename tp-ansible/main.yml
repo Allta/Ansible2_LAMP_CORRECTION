@@ -1,0 +1,12 @@
+---
+- hosts: all
+  roles:
+  - docker
+
+- hosts: db
+  roles:
+  - mysql
+
+- hosts: web
+  roles:
+  - web

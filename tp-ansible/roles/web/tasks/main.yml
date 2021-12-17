@@ -1,0 +1,38 @@
+---
+
+- name: Create App directory
+  ansible.builtin.file:
+    state: directory
+    path: /var/www/ansible-app
+    mode: 0755
+
+- name: Copy template file
+  ansible.builtin.template:
+    src: templates/db-config.php.j2
+    dest: /var/www/ansible-app/db-config.php
+
+- name: Copy app files
+  ansible.builtin.copy:
+    src: files/
+    dest: /var/www/ansible-app/
+
+
+- name: Create custom image for apache and php
+  community.docker.docker_image:
+    name: my-apache
+    build:
+      path: /var/www/ansible-app
+    source: build
+
+- name: Create container apache
+  community.docker.docker_container:
+    name: web
+    image: my-apache
+    state: started
+    restart_policy: on-failure
+    ports:
+      - "80:80"
+    volumes:
+    - /var/www/ansible-app:/var/www/html
+
+
